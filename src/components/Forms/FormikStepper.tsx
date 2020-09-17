@@ -1,54 +1,73 @@
 import React, { useState } from 'react';
 import { Formik } from 'formik'
-import { Form, Transition, Container, Step } from 'semantic-ui-react';
-import { FormikField, FormikRadioGroup } from './FormikFormFields';
+import { Form, Transition, Progress, Button } from 'semantic-ui-react';
+import { FormikDropdown, FormikField, FormikRadioGroup } from './FormikFormFields';
 import { initialValues, RegisterFormInfo } from './RegisterFormInformation';
+
+
 const FormikStepper = ({validationSchemas, ...props} : any) => {
     const [ currStep, setStep ] = useState(0);
     const [ visible, setVisible ] = useState(true);
     
-    const renderStep = (values: any, errors: any, handleSubmit: any, handleChange: any, touched: any) => {
+    const renderStep = (values: any, errors: any, handleSubmit: any, handleChange: any, touched: any, setFieldValue:any ) => {
         // console.log(touched['email'], errors.email)
     const formRender = RegisterFormInfo[currStep].field.map((i : any) => {
         if(i.type === 'checkbox'){
-            return <FormikRadioGroup name={i.name} value={values[i.name]} error={errors[i.name]} touched={touched[i.name]} label={i.label} handleChange={handleChange} type={i.type} checkboxes={i.checkboxes}/>
+            return <FormikRadioGroup name={i.name} value={values[i.name]} error={errors[i.name]} touched={touched[i.name]} setFieldValue={setFieldValue} label={i.label} handleChange={handleChange} type={i.type} checkboxes={i.checkboxes}/>
+        } else if(i.type === 'dropdown') {
+            return <FormikDropdown key={i.name} value={values[i.name]} name={i.name} error={errors[i.name]} touched={touched[i.name]} label={i.label} setFieldValue={setFieldValue} handleChange={handleChange} onChange={handleChange} type={i.type} options={i.options}/>;
         } else {
-            return <FormikField key={i.name} name={i.name} error={errors[i.name]} touched={touched[i.name]} label={i.label} handleChange={handleChange} type={i.type}/>;
+            return <FormikField key={i.name} name={i.name} error={errors[i.name]} touched={touched[i.name]} label={i.label} setFieldValue={setFieldValue} handleChange={handleChange} type={i.type}/>
         }
         
     })
         return(formRender);
     }
-    return(
+
+    const stepBack = () => {
+        setVisible(false)
+        setStep(currStep - 1)
+        setVisible(true)
+    }
+    return(<div style={{background: 'white', borderRadius: '5px'}}>
+<h1 className="ui header">Register</h1>
             <Formik
             initialValues={initialValues}
-            validationSchema={RegisterFormInfo[currStep].validationSchema}
+            // validationSchema={RegisterFormInfo[currStep].validationSchema}
             onSubmit={async (values) => {
                 if(currStep < 1){
                     setVisible(false);
-                    // setTimeout(() => {
-                        setStep(currStep + 1);
-                        setVisible(true);
-                    // })
+                    setStep(currStep + 1);
+                    setVisible(true);
                 } else {
                     //Logic will be here
                     console.log("This is the last Step.")
+                    console.log(values)
                 }
             }}
-        >
-            {({ values, errors, handleSubmit, handleChange, touched } : any) => (
-            <Container>
-                <Form onSubmit={handleSubmit}>
-                        <Transition.Group animation="fade up" duration={500}>
-                            { visible && (<Container fluid>{renderStep(values, errors, handleSubmit, handleChange, touched)}</Container>) }
-                        </Transition.Group>                    
-                    <Form.Button>Next</Form.Button>
-                    
+            >
+            {({ values, errors, handleSubmit, handleChange, touched, setFieldValue } : any) => (
+                <Form onSubmit={handleSubmit} style={{maxWidth: '600px', margin: '0 auto'}}>
+                    <Progress
+                        size="small"
+                        percent={((currStep) / RegisterFormInfo.length) * 100}
+                        indicating
+                        content={<div>{RegisterFormInfo[currStep].progressText}</div>}  
+                    />
+                        
+                        <Transition.Group animation="fade up" duration={300}>
+                            { visible && (<div style={{minHeight : '30em'}}>{renderStep(values, errors, handleSubmit, handleChange, touched, setFieldValue)}
+                            <Button.Group style={{marginTop : '2em'}}>
+                                { currStep !== 0 && <Form.Button style={{marginRight: '1em', padding : '.75em 2em'}} onClick={stepBack} type="button">Back</Form.Button>}   
+                                <Form.Button type="submit" style={{padding : '.75em 2em'}} color="blue">Next</Form.Button>
+                            </Button.Group>
+                            </div>) }
+                        </Transition.Group>
                 </Form>
-            </Container>
             )}
             
         </Formik>
+        </div>
     
     )
 }
